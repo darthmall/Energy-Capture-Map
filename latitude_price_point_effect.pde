@@ -22,7 +22,7 @@ boolean debug = false;
 
 void setup() {
   size(1079, 721);
-  
+
   tickLabelFont = loadFont("AvenirNext-Regular-14.vlw");
   
   world = loadImage("world.png");
@@ -36,7 +36,7 @@ void setup() {
   }
   
   x = new Scale();
-  x.range = new PVector(590, width - 50);
+  x.range = new PVector(600, width - 20);
   x.domain = new PVector(-50, 60);
   
   y = new Scale();
@@ -49,11 +49,13 @@ void setup() {
 void draw() {
   background(255);
 
+  // Draw the map
   pushMatrix();
   translate(0, (height - 361) / 2);
   
   image(world, 0, 0);
   
+  // Latitude bands
   for (float i = minLatitude; i < maxLatitude; i += step) {
     float m = maize(i) - minEnergy;
     float c = cane(i) - minEnergy;
@@ -77,6 +79,7 @@ void draw() {
   
   popMatrix();
   
+  // Draw the regression lines
   noFill();
   stroke(caneTo);
   strokeWeight(2);
@@ -93,10 +96,12 @@ void draw() {
   }
   endShape();
   
+  // Draw the threshold
   stroke(255, 0, 0);
   strokeWeight(1);
-  line(x.range.x + 5, y.value(1f), x.range.y, y.value(1f));
+  line(x.range.x + 5, y.value(minEnergy), x.range.y, y.value(minEnergy));
   
+  // Axes
   fill(170);
   stroke(170);
   strokeWeight(1);
@@ -136,6 +141,16 @@ void axes() {
       text(str(i), x.range.x - 10, y.value(i) + 3);
     }
   }
+  
+  textAlign(CENTER);
+  textFont(tickLabelFont);
+  text("Latitude", x.range.x + (x.range.y - x.range.x)/2, y.range.x + 41);
+
+  pushMatrix();
+  translate(x.range.x - 37, height / 2);
+  rotate(-HALF_PI);
+  text("GJ Harvested Energy per GJ Ecosystem Energy", 0, 0);
+  popMatrix();
 }
 
 void debug() {
