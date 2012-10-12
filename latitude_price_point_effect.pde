@@ -263,6 +263,9 @@ void mousePressed() {
 void mouseDragged() {
   if (dragging) {
     minEnergy = round(y.rev(mouseY + dragOffset) * 10) / 10f;
+    minEnergy = max(y.domain.x, minEnergy);
+    minEnergy = min(y.domain.y, minEnergy);
+
     upperBounds();
   }
 }
