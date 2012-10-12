@@ -103,6 +103,9 @@ void draw() {
   stroke(255, 0, 0);
   strokeWeight(1);
   line(x.range.x + 5, y.value(minEnergy), x.range.y, y.value(minEnergy));
+  fill(255, 0, 0);
+  textAlign(RIGHT);
+  text(String.format("%.1f", minEnergy), x.range.y, y.value(minEnergy) - 2.8);
   
   // Axes
   fill(170);
