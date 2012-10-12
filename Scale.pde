@@ -8,4 +8,10 @@ class Scale {
     
     return (float) (range.x + ((range.y - range.x) * p));
   }
+  
+  float rev(double input) {
+    double p = (input - range.x) / (range.y - range.x);
+    
+    return (float) (domain.x + ((domain.y - domain.x) * p));
+  }
 }

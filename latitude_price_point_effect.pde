@@ -18,6 +18,9 @@ color maizeTo = color(0, 109, 44, 153);
 color caneTo = color(8, 81, 156, 153);
 color caneFrom = color(198, 219, 239, 153);
 
+boolean dragging = false;
+float dragOffset = 0;
+
 boolean debug = false;
 
 void setup() {
@@ -194,4 +197,25 @@ void keyPressed() {
        break;
   }
 }
+
+void mousePressed() {
+  float v = y.value(minEnergy);
+  
+  if (mouseX >= x.range.x && mouseX <= x.range.y &&
+      mouseY >= v - 5 && mouseY <= v + 5) {
+    dragging = true;
+    dragOffset = v - mouseY;
+  }
+}
+
+void mouseDragged() {
+  if (dragging) {
+    minEnergy = y.rev(mouseY + dragOffset);
+  }
+}
+
+void mouseReleased() {
+  dragging = false;
+}
+
 
