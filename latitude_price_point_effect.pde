@@ -48,7 +48,7 @@ void setup() {
 
 void draw() {
   background(255);
-
+  
   // Draw the map
   pushMatrix();
   translate(0, (height - 361) / 2);
@@ -107,6 +107,11 @@ void draw() {
   strokeWeight(1);
   axes();
   
+  pushMatrix();
+  translate(10, (height - 382) / 2);
+  legend();
+  popMatrix();
+  
   if (debug) {
     debug();
   }
@@ -151,6 +156,22 @@ void axes() {
   rotate(-HALF_PI);
   text("GJ Harvested Energy per GJ Ecosystem Energy", 0, 0);
   popMatrix();
+}
+
+void legend() {
+  textAlign(LEFT);
+  
+  noStroke();
+
+  fill(170);
+  text("Maize", 21, 14);
+  text("Cane", 21, 35);
+  
+  fill(maizeTo);
+  rect(0, 0, 16.8, 16.8);  
+  
+  fill(caneTo);
+  rect(0, 21, 16.8, 16.8);
 }
 
 void debug() {
