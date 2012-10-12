@@ -1,3 +1,5 @@
+PFont tickLabelFont;
+
 float step = 3;
 float minEnergy = 1.0;
 float minLatitude = -42;
@@ -16,8 +18,12 @@ color maizeTo = color(0, 109, 44, 153);
 color caneTo = color(8, 81, 156, 153);
 color caneFrom = color(198, 219, 239, 153);
 
+boolean debug = false;
+
 void setup() {
   size(1079, 721);
+  
+  tickLabelFont = loadFont("AvenirNext-Regular-14.vlw");
   
   world = loadImage("world.png");
   mercator = new MercatorMap(540, 361, 84, -58, -180, 180);
@@ -30,15 +36,14 @@ void setup() {
   }
   
   x = new Scale();
-  x.range = new PVector(550, width - 5);
-  x.domain = new PVector(minLatitude, maxLatitude);
+  x.range = new PVector(590, width - 50);
+  x.domain = new PVector(-50, 60);
   
   y = new Scale();
-  y.range = new PVector(width - 555, 0);
+  y.range = new PVector(height * 0.75, height * 0.25);
   y.domain = new PVector(0, 3.5);
   
   smooth();
-  noLoop();
 }
 
 void draw() {
@@ -89,13 +94,18 @@ void draw() {
   endShape();
   
   stroke(255, 0, 0);
-  line(x.value(minLatitude), y.value(1f), x.value(maxLatitude), y.value(1f));
-  
-  noFill();
-  stroke(0xAA888888);
   strokeWeight(1);
-  line(width/2, 0, width/2, height);
-  line(0, height/2, width, height/2);
+  line(x.range.x + 5, y.value(1f), x.range.y, y.value(1f));
+  
+  fill(170);
+  stroke(170);
+  strokeWeight(1);
+  axes();
+  
+  if (debug) {
+    debug();
+  }
+
 }
 
 float maize(float x) {
@@ -106,12 +116,46 @@ float cane(float x) {
   return 0.86884 + (-0.0083336)*x + 0.00091813*pow(x,2) + 1.418E-5 * pow(x,3);
 }
 
+void axes() {
+  textFont(tickLabelFont);
+
+  textAlign(CENTER);
+  for (float i = x.domain.x, j = 0; i <= x.domain.y; i += 10, j++) {
+    line(x.value(i), y.range.x, x.value(i), y.range.x + 5);
+    
+    if (j % 2 == 0) {
+      text(str(int(i)), x.value(i), y.range.x + 20);
+    }
+  }
+  
+  textAlign(RIGHT);
+  for (float i = y.domain.x, j = 0; i <= y.domain.y; i += 0.5, j++) {
+    line(x.range.x, y.value(i), x.range.x - 5, y.value(i));
+    
+    if (j % 2 == 0) {
+      text(str(i), x.range.x - 10, y.value(i) + 3);
+    }
+  }
+}
+
+void debug() {
+  noFill();
+  stroke(0xAA888888);
+  strokeWeight(1);
+  line(width/2, 0, width/2, height);
+  line(0, height/2, width, height/2);
+}
+
 void keyPressed() {
   switch (key) {
     case ENTER:
     case RETURN:
       saveFrame("map.tiff");
       break;
+      
+     case TAB:
+       debug = !debug;
+       break;
   }
 }
 
