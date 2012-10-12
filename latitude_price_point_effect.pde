@@ -59,11 +59,11 @@ void draw() {
   image(world, 0, 0);
   
   // Latitude bands
-  for (float i = minLatitude; i < maxLatitude; i += step) {
+  for (float i = minLatitude; i <= maxLatitude; i += step) {
     float m = maize(i) - minEnergy;
     float c = cane(i) - minEnergy;
-    PVector tl = mercator.getScreenLocation(new PVector(i+step, -180));
-    PVector br = mercator.getScreenLocation(new PVector(i, 180));
+    PVector tl = mercator.getScreenLocation(new PVector(i+step/2, -180));
+    PVector br = mercator.getScreenLocation(new PVector(i-step/2, 180));
     float w = br.x - tl.x;
     float h = br.y - tl.y;
     
