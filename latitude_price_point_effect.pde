@@ -23,6 +23,9 @@ float dragOffset = 0;
 
 boolean debug = false;
 
+ArrayList<PVector> cane;
+ArrayList<PVector> maize;
+
 void setup() {
   size(1079, 721);
 
@@ -40,6 +43,11 @@ void setup() {
   y = new Scale();
   y.range = new PVector(height * 0.75, height * 0.25);
   y.domain = new PVector(0, 3.5);
+  
+  cane = new ArrayList<PVector>();
+  maize = new ArrayList<PVector>();
+  loadData("cane.csv", cane);
+  loadData("maize.csv", maize);
   
   smooth();
 }
@@ -69,7 +77,7 @@ void draw() {
     }
     
     
-    if (c > 0 && i <= 35) {
+    if (c > 0 && i <= 40) {
       fill(lerpColor(caneFrom, caneTo, c / maxCane));
       rect(tl.x, tl.y, br.x - tl.x, br.y - tl.y);
     }
@@ -77,12 +85,28 @@ void draw() {
   
   popMatrix();
   
+  noStroke();
+  
+  // Draw cane data
+  fill(198, 219, 239);
+  
+  for (int i = 0; i < cane.size(); i++) {
+    PVector p = cane.get(i);
+    ellipse(p.x, p.y, 5, 5);
+  }
+
+  fill(199, 233, 192);
+  for (int i = 0; i < maize.size(); i++) {
+    PVector p = maize.get(i);
+    ellipse(p.x, p.y, 5, 5);
+  }
+  
   // Draw the regression lines
   noFill();
   stroke(caneTo);
   strokeWeight(2);
   beginShape();
-  for (float i = minLatitude; i < 35; i += step) {
+  for (float i = minLatitude; i < 40; i += step) {
     curveVertex(x.value(i), y.value(cane(i)));
   }
   endShape();
@@ -177,11 +201,32 @@ void legend() {
 
 void upperBounds() {
   for (float i = minLatitude; i <= maxLatitude; i += step) {
-    if (i <= 35) {
+    if (i <= 40) {
       maxCane = max(maxCane, cane(i) - minEnergy);
     }
     maxMaize = max(maxMaize, maize(i) - minEnergy);
   }
+}
+
+void loadData(String filename, ArrayList<PVector> data) {
+  BufferedReader reader = createReader(filename);
+  String l;
+  
+  do {
+    try {
+      l = reader.readLine();
+      
+      if (l != null) {
+        String[] toks = l.split(",");
+      
+        data.add(new PVector(x.value(float(toks[0])), y.value(float(toks[1]))));
+      }
+      
+    } catch (IOException e) {
+      e.printStackTrace();
+      l = null;
+    }
+  } while (l != null);
 }
 
 void debug() {
@@ -217,7 +262,7 @@ void mousePressed() {
 
 void mouseDragged() {
   if (dragging) {
-    minEnergy = y.rev(mouseY + dragOffset);
+    minEnergy = round(y.rev(mouseY + dragOffset) * 10) / 10f;
     upperBounds();
   }
 }
