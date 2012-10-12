@@ -31,12 +31,7 @@ void setup() {
   world = loadImage("world.png");
   mercator = new MercatorMap(540, 361, 84, -58, -180, 180);
   
-  for (float i = minLatitude; i < maxLatitude; i += step) {
-    if (i <= 35) {
-      maxCane = max(maxCane, cane(i) - minEnergy);
-    }
-    maxMaize = max(maxMaize, maize(i) - minEnergy);
-  }
+  upperBounds();
   
   x = new Scale();
   x.range = new PVector(600, width - 20);
@@ -180,6 +175,15 @@ void legend() {
   rect(0, 21, 16.8, 16.8);
 }
 
+void upperBounds() {
+  for (float i = minLatitude; i <= maxLatitude; i += step) {
+    if (i <= 35) {
+      maxCane = max(maxCane, cane(i) - minEnergy);
+    }
+    maxMaize = max(maxMaize, maize(i) - minEnergy);
+  }
+}
+
 void debug() {
   noFill();
   stroke(0xAA888888);
@@ -214,6 +218,7 @@ void mousePressed() {
 void mouseDragged() {
   if (dragging) {
     minEnergy = y.rev(mouseY + dragOffset);
+    upperBounds();
   }
 }
 
