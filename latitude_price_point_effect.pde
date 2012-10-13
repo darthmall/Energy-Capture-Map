@@ -1,3 +1,6 @@
+float MARGIN = 20;
+float AXIS_SIZE = 60;
+
 PFont tickLabelFont;
 
 float step = 3;
@@ -13,35 +16,47 @@ MercatorMap mercator;
 Scale x;
 Scale y;
 
+color lightGray = #aaaaaa;
+color darkGray = #888888;
+
+color maizeLight = color(199, 233, 192);
+color maizeDark = color(0, 109, 44);
 color maizeFrom = color(199, 233, 192, 153);
 color maizeTo = color(0, 109, 44, 153);
-color caneTo = color(8, 81, 156, 153);
+
+color caneLight = color(198, 219, 239);
+color caneDark = color(8, 81, 156);
 color caneFrom = color(198, 219, 239, 153);
+color caneTo = color(8, 81, 156, 153);
 
 boolean dragging = false;
 float dragOffset = 0;
 
+boolean drawCane = true;
+boolean drawMaize = true;
 boolean debug = false;
+
+PVector legendPos;
 
 ArrayList<PVector> cane;
 ArrayList<PVector> maize;
 
 void setup() {
-  size(1079, 721);
+  size(740, 720);
 
   tickLabelFont = loadFont("AvenirNext-Regular-14.vlw");
   
   world = loadImage("world.png");
-  mercator = new MercatorMap(540, 361, 84, -58, -180, 180);
+  mercator = new MercatorMap(604, 340, 79, -56.3653, -180, 180);
   
   upperBounds();
   
   x = new Scale();
-  x.range = new PVector(600, width - 20);
+  x.range = new PVector(AXIS_SIZE, world.width);
   x.domain = new PVector(-50, 60);
   
   y = new Scale();
-  y.range = new PVector(height * 0.75, height * 0.25);
+  y.range = new PVector(height - AXIS_SIZE, world.height + MARGIN);
   y.domain = new PVector(0, 3.5);
   
   cane = new ArrayList<PVector>();
@@ -49,16 +64,37 @@ void setup() {
   loadData("cane.csv", cane);
   loadData("maize.csv", maize);
   
+  legendPos = new PVector(world.width + MARGIN, MARGIN);
+  
   smooth();
 }
 
 void draw() {
   background(255);
   
-  // Draw the map
-  pushMatrix();
-  translate(0, (height - 361) / 2);
+  translate(MARGIN, 0);
+  worldMap();
+  plot();
   
+  // Axes
+  fill(darkGray);
+  stroke(darkGray);
+  strokeWeight(1);
+  axes();
+  
+  pushMatrix();
+  translate(legendPos.x, legendPos.y);
+  legend();
+  popMatrix();
+  
+  if (debug) {
+    debug();
+  }
+
+}
+
+void worldMap() {
+    // Draw the map
   image(world, 0, 0);
   
   // Latitude bands
@@ -71,52 +107,61 @@ void draw() {
     float h = br.y - tl.y;
     
     noStroke();
-    if (m > 0) {
+    if (m > 0 && drawMaize) {
       fill(lerpColor(maizeFrom, maizeTo, m / maxMaize));
       rect(tl.x, tl.y, br.x - tl.x, br.y - tl.y);
     }
     
     
-    if (c > 0 && i <= 40) {
+    if (c > 0 && i <= 40 && drawCane) {
       fill(lerpColor(caneFrom, caneTo, c / maxCane));
       rect(tl.x, tl.y, br.x - tl.x, br.y - tl.y);
     }
   }
-  
-  popMatrix();
-  
+}
+
+void plot() {
+  // Draw cane data
   noStroke();
   
-  // Draw cane data
-  fill(198, 219, 239);
-  
-  for (int i = 0; i < cane.size(); i++) {
-    PVector p = cane.get(i);
-    ellipse(p.x, p.y, 5, 5);
+  if (drawCane) {
+    fill(caneLight);
+    
+    for (int i = 0; i < cane.size(); i++) {
+      PVector p = cane.get(i);
+      ellipse(p.x, p.y, 5, 5);
+    }
   }
 
-  fill(199, 233, 192);
-  for (int i = 0; i < maize.size(); i++) {
-    PVector p = maize.get(i);
-    ellipse(p.x, p.y, 5, 5);
+  if (drawMaize) {
+    fill(maizeLight);
+    for (int i = 0; i < maize.size(); i++) {
+      PVector p = maize.get(i);
+      ellipse(p.x, p.y, 5, 5);
+    }
   }
   
   // Draw the regression lines
   noFill();
-  stroke(caneTo);
-  strokeWeight(2);
-  beginShape();
-  for (float i = minLatitude; i < 40; i += step) {
-    curveVertex(x.value(i), y.value(cane(i)));
-  }
-  endShape();
   
-  stroke(maizeTo);
-  beginShape();
-  for (float i = minLatitude; i < maxLatitude; i += step) {
-    curveVertex(x.value(i), y.value(maize(i)));
+  if (drawCane) {
+    stroke(caneDark);
+    strokeWeight(2);
+    beginShape();
+    for (float i = minLatitude; i < 40; i += step) {
+      curveVertex(x.value(i), y.value(cane(i)));
+    }
+    endShape();
   }
-  endShape();
+  
+  if (drawMaize) {
+    stroke(maizeDark);
+    beginShape();
+    for (float i = minLatitude; i < maxLatitude; i += step) {
+      curveVertex(x.value(i), y.value(maize(i)));
+    }
+    endShape();
+  }
   
   // Draw the threshold
   stroke(255, 0, 0);
@@ -124,23 +169,7 @@ void draw() {
   line(x.range.x + 5, y.value(minEnergy), x.range.y, y.value(minEnergy));
   fill(255, 0, 0);
   textAlign(RIGHT);
-  text(String.format("%.1f", minEnergy), x.range.y, y.value(minEnergy) - 2.8);
-  
-  // Axes
-  fill(170);
-  stroke(170);
-  strokeWeight(1);
-  axes();
-  
-  pushMatrix();
-  translate(10, (height - 382) / 2);
-  legend();
-  popMatrix();
-  
-  if (debug) {
-    debug();
-  }
-
+  text(String.format("%.2f", minEnergy), x.range.y, y.value(minEnergy) - 2.8);
 }
 
 float maize(float x) {
@@ -177,7 +206,7 @@ void axes() {
   text("Latitude", x.range.x + (x.range.y - x.range.x)/2, y.range.x + 41);
 
   pushMatrix();
-  translate(x.range.x - 37, height / 2);
+  translate(x.range.x - 47, y.range.x + (y.range.y - y.range.x) / 2);
   rotate(-HALF_PI);
   text("GJ Harvested Energy per GJ Ecosystem Energy", 0, 0);
   popMatrix();
@@ -185,18 +214,31 @@ void axes() {
 
 void legend() {
   textAlign(LEFT);
-  
-  noStroke();
 
-  fill(170);
+  noStroke();
+  
+  fill(drawMaize ? darkGray : lightGray);
   text("Maize", 21, 14);
+  fill(drawCane ? darkGray : lightGray);
   text("Cane", 21, 35);
   
-  fill(maizeTo);
+  stroke(maizeLight);
+  if (drawMaize) {
+    fill(maizeDark);
+  } else {
+    noFill();
+  }
   rect(0, 0, 16.8, 16.8);  
   
-  fill(caneTo);
+  stroke(caneLight);
+  if (drawCane) {
+    fill(caneDark);
+  } else {
+    noFill();
+  }
+    
   rect(0, 21, 16.8, 16.8);
+  
 }
 
 void upperBounds() {
@@ -231,7 +273,7 @@ void loadData(String filename, ArrayList<PVector> data) {
 
 void debug() {
   noFill();
-  stroke(0xAA888888);
+  stroke(lightGray);
   strokeWeight(1);
   line(width/2, 0, width/2, height);
   line(0, height/2, width, height/2);
@@ -262,7 +304,7 @@ void mousePressed() {
 
 void mouseDragged() {
   if (dragging) {
-    minEnergy = round(y.rev(mouseY + dragOffset) * 10) / 10f;
+    minEnergy = round(y.rev(mouseY + dragOffset) * 100) / 100f;
     minEnergy = max(y.domain.x, minEnergy);
     minEnergy = min(y.domain.y, minEnergy);
 
@@ -272,6 +314,18 @@ void mouseDragged() {
 
 void mouseReleased() {
   dragging = false;
+}
+
+void mouseClicked() {
+  PVector p = new PVector(mouseX - legendPos.x, mouseY - legendPos.y);
+  
+  if (p.x >= 0 && p.y >= 0 && p.x <= 90) {
+    if (p.y <= 16.8) {
+      drawMaize = !drawMaize;
+    } else if (p.y >= 21 && p.y <= 37.8) {
+      drawCane = !drawCane;
+    } 
+  }
 }
 
 
