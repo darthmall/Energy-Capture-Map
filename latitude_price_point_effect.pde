@@ -286,8 +286,6 @@ void updateRanges() {
   if (maizeRange.x < minEnergy) {
     maizeRange.x = minEnergy;
   }
-  
-  println(caneRange.x);
 }
 
 void loadData(String filename, ArrayList<PVector> data, PVector domain) {
