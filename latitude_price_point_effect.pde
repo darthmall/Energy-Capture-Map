@@ -7,6 +7,7 @@ float step = 3;
 float minEnergy = 1.0;
 float minLatitude = -42;
 float maxLatitude = 54;
+
 float maxCane = 0;
 float maxMaize = 0;
 
@@ -16,18 +17,16 @@ MercatorMap mercator;
 Scale x;
 Scale y;
 
-color lightGray = #aaaaaa;
-color darkGray = #888888;
-
-color maizeLight = color(199, 233, 192);
-color maizeDark = color(0, 109, 44);
-color maizeFrom = color(199, 233, 192, 153);
-color maizeTo = color(0, 109, 44, 153);
-
-color caneLight = color(198, 219, 239);
-color caneDark = color(8, 81, 156);
-color caneFrom = color(198, 219, 239, 153);
-color caneTo = color(8, 81, 156, 153);
+color thresholdColor = #ae2640;
+color[] maizeColors = {
+  0x66f6eff7, 0x66bdc9e1, 0x6667a9cf, 0x661c9099, 0x66016c59
+};
+color[] caneColors = {
+  0x66feebe2, 0x66fbb4b9, 0x66f768a1, 0x66c51b8a, 0x667a0177
+};
+color[] grays = {
+  #f7f7f7, #cccccc, #969696, #636363, #252525
+};
 
 boolean dragging = false;
 float dragOffset = 0;
@@ -77,8 +76,8 @@ void draw() {
   plot();
   
   // Axes
-  fill(darkGray);
-  stroke(darkGray);
+  fill(grays[2]);
+  stroke(grays[2]);
   strokeWeight(1);
   axes();
   
@@ -108,13 +107,13 @@ void worldMap() {
     
     noStroke();
     if (m > 0 && drawMaize) {
-      fill(lerpColor(maizeFrom, maizeTo, m / maxMaize));
+      fill(maizeColors[int(round((m / maxMaize * 100))) / (100 / (maizeColors.length - 1))]);
       rect(tl.x, tl.y, br.x - tl.x, br.y - tl.y);
     }
     
     
     if (c > 0 && i <= 40 && drawCane) {
-      fill(lerpColor(caneFrom, caneTo, c / maxCane));
+      fill(caneColors[int(round((c / maxCane * 100))) / (100 / (caneColors.length - 1))]);
       rect(tl.x, tl.y, br.x - tl.x, br.y - tl.y);
     }
   }
@@ -125,7 +124,7 @@ void plot() {
   noStroke();
   
   if (drawCane) {
-    fill(caneLight);
+    fill(caneColors[1]);
     
     for (int i = 0; i < cane.size(); i++) {
       PVector p = cane.get(i);
@@ -134,7 +133,7 @@ void plot() {
   }
 
   if (drawMaize) {
-    fill(maizeLight);
+    fill(maizeColors[1]);
     for (int i = 0; i < maize.size(); i++) {
       PVector p = maize.get(i);
       ellipse(p.x, p.y, 5, 5);
@@ -145,7 +144,7 @@ void plot() {
   noFill();
   
   if (drawCane) {
-    stroke(caneDark);
+    stroke(caneColors[4]);
     strokeWeight(2);
     beginShape();
     for (float i = minLatitude; i < 40; i += step) {
@@ -155,7 +154,7 @@ void plot() {
   }
   
   if (drawMaize) {
-    stroke(maizeDark);
+    stroke(maizeColors[4]);
     beginShape();
     for (float i = minLatitude; i < maxLatitude; i += step) {
       curveVertex(x.value(i), y.value(maize(i)));
@@ -164,10 +163,10 @@ void plot() {
   }
   
   // Draw the threshold
-  stroke(255, 0, 0);
+  stroke(thresholdColor);
   strokeWeight(1);
   line(x.range.x + 5, y.value(minEnergy), x.range.y, y.value(minEnergy));
-  fill(255, 0, 0);
+  fill(thresholdColor);
   textAlign(RIGHT);
   text(String.format("%.2f", minEnergy), x.range.y, y.value(minEnergy) - 2.8);
 }
@@ -217,23 +216,27 @@ void legend() {
 
   noStroke();
   
-  fill(drawMaize ? darkGray : lightGray);
+  fill(grays[drawMaize ? 3 : 1]);
   text("Maize", 21, 14);
-  fill(drawCane ? darkGray : lightGray);
+  fill(grays[drawCane ? 3 : 1]);
   text("Cane", 21, 35);
   
-  stroke(maizeLight);
+
   if (drawMaize) {
-    fill(maizeDark);
+    noStroke();
+    fill(maizeColors[4]);
   } else {
     noFill();
+    stroke(maizeColors[1]);
   }
   rect(0, 0, 16.8, 16.8);  
   
-  stroke(caneLight);
+
   if (drawCane) {
-    fill(caneDark);
+    noStroke();
+    fill(caneColors[4]);
   } else {
+    stroke(caneColors[1]);
     noFill();
   }
     
@@ -273,7 +276,7 @@ void loadData(String filename, ArrayList<PVector> data) {
 
 void debug() {
   noFill();
-  stroke(lightGray);
+  stroke(grays[3]);
   strokeWeight(1);
   line(width/2, 0, width/2, height);
   line(0, height/2, width, height/2);
