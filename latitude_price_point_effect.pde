@@ -31,8 +31,8 @@ color[] grays = {
 boolean dragging = false;
 float dragOffset = 0;
 
-boolean drawCane = true;
-boolean drawMaize = true;
+boolean showCane = true;
+boolean showMaize = true;
 boolean debug = false;
 
 PVector legendPos;
@@ -111,15 +111,24 @@ void worldMap() {
     float w = br.x - tl.x;
     float h = br.y - tl.y;
     
+    boolean drawMaize = showMaize && i >= maizeDomain.x && i <= maizeDomain.y && m >= minEnergy;
+    boolean drawCane = showCane && i >= caneDomain.x && i <= caneDomain.y && c >= minEnergy;
+
     noStroke();
-    if (drawMaize && i >= maizeDomain.x && i <= maizeDomain.y && m >= minEnergy && (m >= c || !drawCane || i >= 40)) {
+
+    if (drawMaize && drawCane) {
+      if (m > c) {
+        fill(maizeColors[int(round(((m - maizeRange.x) / (maizeRange.y - maizeRange.x) * 100))) / (100 / (maizeColors.length - 1))]);
+      } else {
+        fill(caneColors[int(round(((c - caneRange.x) / (caneRange.y - caneRange.x) * 100))) / (100 / (caneColors.length - 1))]);
+      }
+    } else if (drawMaize) {
       fill(maizeColors[int(round(((m - maizeRange.x) / (maizeRange.y - maizeRange.x) * 100))) / (100 / (maizeColors.length - 1))]);
-      rect(tl.x, tl.y, br.x - tl.x, br.y - tl.y);
+    } else if (drawCane) {
+      fill(caneColors[int(round(((c - caneRange.x) / (caneRange.y - caneRange.x) * 100))) / (100 / (caneColors.length - 1))]);
     }
     
-    
-    if (drawCane && i >= caneDomain.x && i <= caneDomain.y && c >= minEnergy && i <= 40 && (c >= m || !drawMaize)) {
-      fill(caneColors[int(round(((c - caneRange.x) / (caneRange.y - caneRange.x) * 100))) / (100 / (caneColors.length - 1))]);
+    if (drawMaize || drawCane) {
       rect(tl.x, tl.y, br.x - tl.x, br.y - tl.y);
     }
   }
@@ -129,7 +138,7 @@ void plot() {
   // Draw cane data
   noStroke();
   
-  if (drawCane) {
+  if (showCane) {
     fill(caneColors[1]);
     
     for (int i = 0; i < caneData.size(); i++) {
@@ -138,7 +147,7 @@ void plot() {
     }
   }
 
-  if (drawMaize) {
+  if (showMaize) {
     fill(maizeColors[1]);
     for (int i = 0; i < maizeData.size(); i++) {
       PVector p = maizeData.get(i);
@@ -149,7 +158,7 @@ void plot() {
   // Draw the regression lines
   noFill();
   
-  if (drawCane) {
+  if (showCane) {
     stroke(caneColors[4]);
     strokeWeight(2);
     beginShape();
@@ -159,7 +168,7 @@ void plot() {
     endShape();
   }
   
-  if (drawMaize) {
+  if (showMaize) {
     stroke(maizeColors[4]);
     beginShape();
     for (float i = maizeDomain.x; i < maizeDomain.y; i += step) {
@@ -222,13 +231,13 @@ void legend() {
 
   noStroke();
   
-  fill(grays[drawMaize ? 3 : 1]);
+  fill(grays[showMaize ? 3 : 1]);
   text("Maize", 21, 14);
-  fill(grays[drawCane ? 3 : 1]);
+  fill(grays[showCane ? 3 : 1]);
   text("Cane", 21, 35);
   
 
-  if (drawMaize) {
+  if (showMaize) {
     noStroke();
     fill(maizeColors[4]);
   } else {
@@ -238,7 +247,7 @@ void legend() {
   rect(0, 0, 16.8, 16.8);  
   
 
-  if (drawCane) {
+  if (showCane) {
     noStroke();
     fill(caneColors[4]);
   } else {
@@ -369,9 +378,9 @@ void mouseClicked() {
   
   if (p.x >= 0 && p.y >= 0 && p.x <= 90) {
     if (p.y <= 16.8) {
-      drawMaize = !drawMaize;
+      showMaize = !showMaize;
     } else if (p.y >= 21 && p.y <= 37.8) {
-      drawCane = !drawCane;
+      showCane = !showCane;
     } 
   }
 }
