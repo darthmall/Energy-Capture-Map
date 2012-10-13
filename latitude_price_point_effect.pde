@@ -5,8 +5,6 @@ PFont tickLabelFont;
 
 float step = 3;
 float minEnergy = 1.0;
-float minLatitude = -42;
-float maxLatitude = 54;
 
 PVector caneRange;
 PVector caneDomain;
@@ -156,7 +154,7 @@ void plot() {
     strokeWeight(2);
     beginShape();
     for (float i = caneDomain.x; i <= caneDomain.y; i += step) {
-      curveVertex(x.value(i), y.value(cane(i)));
+      vertex(x.value(i), y.value(cane(i)));
     }
     endShape();
   }
@@ -165,7 +163,7 @@ void plot() {
     stroke(maizeColors[4]);
     beginShape();
     for (float i = maizeDomain.x; i < maizeDomain.y; i += step) {
-      curveVertex(x.value(i), y.value(maize(i)));
+      vertex(x.value(i), y.value(maize(i)));
     }
     endShape();
   }
