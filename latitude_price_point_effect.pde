@@ -8,8 +8,10 @@ float minEnergy = 1.0;
 float minLatitude = -42;
 float maxLatitude = 54;
 
-float maxCane = 0;
-float maxMaize = 0;
+PVector caneRange;
+PVector caneDomain;
+PVector maizeRange;
+PVector maizeDomain;
 
 PImage world;
 MercatorMap mercator;
@@ -19,10 +21,10 @@ Scale y;
 
 color thresholdColor = #ae2640;
 color[] maizeColors = {
-  0x66f6eff7, 0x66bdc9e1, 0x6667a9cf, 0x661c9099, 0x66016c59
+  0x88f6eff7, 0x88bdc9e1, 0x8867a9cf, 0x881c9099, 0x88016c59
 };
 color[] caneColors = {
-  0x66feebe2, 0x66fbb4b9, 0x66f768a1, 0x66c51b8a, 0x667a0177
+  0x88feebe2, 0x88fbb4b9, 0x88f768a1, 0x88c51b8a, 0x887a0177
 };
 color[] grays = {
   #f7f7f7, #cccccc, #969696, #636363, #252525
@@ -37,8 +39,8 @@ boolean debug = false;
 
 PVector legendPos;
 
-ArrayList<PVector> cane;
-ArrayList<PVector> maize;
+ArrayList<PVector> caneData;
+ArrayList<PVector> maizeData;
 
 void setup() {
   size(740, 720);
@@ -48,7 +50,8 @@ void setup() {
   world = loadImage("world.png");
   mercator = new MercatorMap(604, 340, 79, -56.3653, -180, 180);
   
-  upperBounds();
+  caneDomain = new PVector(-33, 36);
+  maizeDomain = new PVector(-43, 54);
   
   x = new Scale();
   x.range = new PVector(AXIS_SIZE, world.width);
@@ -57,12 +60,17 @@ void setup() {
   y = new Scale();
   y.range = new PVector(height - AXIS_SIZE, world.height + MARGIN);
   y.domain = new PVector(0, 3.5);
+
+  caneData = new ArrayList<PVector>();
+  caneDomain = new PVector();
+  loadData("cane.csv", caneData, caneDomain);
   
-  cane = new ArrayList<PVector>();
-  maize = new ArrayList<PVector>();
-  loadData("cane.csv", cane);
-  loadData("maize.csv", maize);
+  maizeData = new ArrayList<PVector>();
+  maizeDomain = new PVector();
+  loadData("maize.csv", maizeData, maizeDomain);
   
+  updateRanges();
+
   legendPos = new PVector(world.width + MARGIN, MARGIN);
   
   smooth();
@@ -97,23 +105,23 @@ void worldMap() {
   image(world, 0, 0);
   
   // Latitude bands
-  for (float i = minLatitude; i <= maxLatitude; i += step) {
-    float m = maize(i) - minEnergy;
-    float c = cane(i) - minEnergy;
+  for (float i = x.domain.x; i <= x.domain.y; i += step) {
+    float m = maize(i);
+    float c = cane(i);
     PVector tl = mercator.getScreenLocation(new PVector(i+step/2, -180));
     PVector br = mercator.getScreenLocation(new PVector(i-step/2, 180));
     float w = br.x - tl.x;
     float h = br.y - tl.y;
     
     noStroke();
-    if (m > 0 && drawMaize) {
-      fill(maizeColors[int(round((m / maxMaize * 100))) / (100 / (maizeColors.length - 1))]);
+    if (drawMaize && i >= maizeDomain.x && i <= maizeDomain.y && m >= minEnergy && (m >= c || !drawCane || i >= 40)) {
+      fill(maizeColors[int(round(((m - maizeRange.x) / (maizeRange.y - maizeRange.x) * 100))) / (100 / (maizeColors.length - 1))]);
       rect(tl.x, tl.y, br.x - tl.x, br.y - tl.y);
     }
     
     
-    if (c > 0 && i <= 40 && drawCane) {
-      fill(caneColors[int(round((c / maxCane * 100))) / (100 / (caneColors.length - 1))]);
+    if (drawCane && i >= caneDomain.x && i <= caneDomain.y && c >= minEnergy && i <= 40 && (c >= m || !drawMaize)) {
+      fill(caneColors[int(round(((c - caneRange.x) / (caneRange.y - caneRange.x) * 100))) / (100 / (caneColors.length - 1))]);
       rect(tl.x, tl.y, br.x - tl.x, br.y - tl.y);
     }
   }
@@ -126,16 +134,16 @@ void plot() {
   if (drawCane) {
     fill(caneColors[1]);
     
-    for (int i = 0; i < cane.size(); i++) {
-      PVector p = cane.get(i);
+    for (int i = 0; i < caneData.size(); i++) {
+      PVector p = caneData.get(i);
       ellipse(p.x, p.y, 5, 5);
     }
   }
 
   if (drawMaize) {
     fill(maizeColors[1]);
-    for (int i = 0; i < maize.size(); i++) {
-      PVector p = maize.get(i);
+    for (int i = 0; i < maizeData.size(); i++) {
+      PVector p = maizeData.get(i);
       ellipse(p.x, p.y, 5, 5);
     }
   }
@@ -147,7 +155,7 @@ void plot() {
     stroke(caneColors[4]);
     strokeWeight(2);
     beginShape();
-    for (float i = minLatitude; i < 40; i += step) {
+    for (float i = caneDomain.x; i <= caneDomain.y; i += step) {
       curveVertex(x.value(i), y.value(cane(i)));
     }
     endShape();
@@ -156,7 +164,7 @@ void plot() {
   if (drawMaize) {
     stroke(maizeColors[4]);
     beginShape();
-    for (float i = minLatitude; i < maxLatitude; i += step) {
+    for (float i = maizeDomain.x; i < maizeDomain.y; i += step) {
       curveVertex(x.value(i), y.value(maize(i)));
     }
     endShape();
@@ -241,19 +249,49 @@ void legend() {
   }
     
   rect(0, 21, 16.8, 16.8);
-  
 }
 
-void upperBounds() {
-  for (float i = minLatitude; i <= maxLatitude; i += step) {
-    if (i <= 40) {
-      maxCane = max(maxCane, cane(i) - minEnergy);
+void updateRanges() {
+  caneRange = null;
+  maizeRange = null;
+
+  for (float i = x.domain.x; i <= x.domain.y; i += step) {
+    if (i >= maizeDomain.x && i <= maizeDomain.y) {
+      float m = maize(i);
+      
+      if (maizeRange == null) {
+        maizeRange = new PVector(m, m);
+      } else {
+        maizeRange.x = min(maizeRange.x, m);
+        maizeRange.y = max(maizeRange.y, m);
+      }
     }
-    maxMaize = max(maxMaize, maize(i) - minEnergy);
+    
+    if (i >= caneDomain.x && i <= caneDomain.y) {
+      float c = cane(i);
+      
+      if (caneRange == null) {
+        caneRange = new PVector(c, c);
+      } else {
+        caneRange.x = min(caneRange.x, c);
+        caneRange.y = max(caneRange.y, c);
+      }
+    }
   }
+  
+  if (caneRange.x < minEnergy) {
+    caneRange.x = minEnergy;
+  }
+  
+  if (maizeRange.x < minEnergy) {
+    maizeRange.x = minEnergy;
+  }
+  
+  println(caneRange.x);
 }
 
-void loadData(String filename, ArrayList<PVector> data) {
+void loadData(String filename, ArrayList<PVector> data, PVector domain) {
+  boolean domainUnset = true;
   BufferedReader reader = createReader(filename);
   String l;
   
@@ -263,8 +301,19 @@ void loadData(String filename, ArrayList<PVector> data) {
       
       if (l != null) {
         String[] toks = l.split(",");
+        float lat = float(toks[0]);
+        float ratio = float(toks[1]);
+        
+        if (domainUnset) {
+          domain.x = lat;
+          domain.y = lat;
+          domainUnset = false;
+        } else {
+          domain.x = min(domain.x, lat);
+          domain.y = max(domain.y, lat);
+        }
       
-        data.add(new PVector(x.value(float(toks[0])), y.value(float(toks[1]))));
+        data.add(new PVector(x.value(lat), y.value(ratio)));
       }
       
     } catch (IOException e) {
@@ -311,7 +360,7 @@ void mouseDragged() {
     minEnergy = max(y.domain.x, minEnergy);
     minEnergy = min(y.domain.y, minEnergy);
 
-    upperBounds();
+    updateRanges();
   }
 }
 
