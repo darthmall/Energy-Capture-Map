@@ -3,7 +3,7 @@ float AXIS_SIZE = 60;
 
 PFont tickLabelFont;
 
-float step = 3;
+float step = 2;
 float minEnergy = 1.0;
 
 PVector caneRange;
@@ -18,11 +18,13 @@ Scale x;
 Scale y;
 
 color thresholdColor = #ae2640;
-color[] maizeColors = {
-  0x88f6eff7, 0x88bdc9e1, 0x8867a9cf, 0x881c9099, 0x88016c59
-};
 color[] caneColors = {
-  0x88feebe2, 0x88fbb4b9, 0x88f768a1, 0x88c51b8a, 0x887a0177
+  0x88F7F4F9, 0x88E7E1EF, 0x88D4B9DA, 0x88C994C7,0x88DF65B0,
+  0x88E7298A, 0x88CE1256, 0x88980043, 0x8867001F
+};
+color[] maizeColors = {
+  0x88FFFFE5, 0x88F7FCB9, 0x88D9F0A3, 0x88ADDD8E, 0x8878C679,
+  0x8841AB5D, 0x88238443, 0x88006837, 0x88004529
 };
 color[] grays = {
   #f7f7f7, #cccccc, #969696, #636363, #252525
