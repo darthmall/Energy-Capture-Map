@@ -14,8 +14,9 @@ PVector maizeDomain;
 PImage world;
 MercatorMap mercator;
 
-Scale x;
-Scale y;
+Scale lat;
+Scale energy;
+Scale land;
 
 color thresholdColor = #ae2640;
 color[] caneColors = {
@@ -33,6 +34,7 @@ color[] grays = {
 boolean dragging = false;
 float dragOffset = 0;
 
+boolean export = false;
 boolean showCane = true;
 boolean showMaize = true;
 boolean debug = false;
@@ -53,13 +55,17 @@ void setup() {
   caneDomain = new PVector(-33, 36);
   maizeDomain = new PVector(-43, 54);
   
-  x = new Scale();
-  x.range = new PVector(AXIS_SIZE, world.width);
-  x.domain = new PVector(-50, 60);
+  lat = new Scale();
+  lat.range = new PVector(AXIS_SIZE, world.width);
+  lat.domain = new PVector(-50, 60);
   
-  y = new Scale();
-  y.range = new PVector(height - AXIS_SIZE, world.height + MARGIN);
-  y.domain = new PVector(0, 3.5);
+  energy = new Scale();
+  energy.range = new PVector(height - AXIS_SIZE, world.height + MARGIN);
+  energy.domain = new PVector(0, 3.5);
+  
+  land = new Scale();
+  land.range = energy.range;
+  land.domain = new PVector(0, 636000);
 
   caneData = new ArrayList<PVector>();
   caneDomain = new PVector();
@@ -81,111 +87,40 @@ void draw() {
   
   translate(MARGIN, 0);
   worldMap();
-  plot();
-  
-  // Axes
-  fill(grays[2]);
-  stroke(grays[2]);
-  strokeWeight(1);
-  axes();
-  
-  pushMatrix();
-  translate(legendPos.x, legendPos.y);
-  legend();
-  popMatrix();
-  
-  if (debug) {
-    debug();
-  }
 
-}
-
-void worldMap() {
-    // Draw the map
-  image(world, 0, 0);
-  
-  // Latitude bands
-  for (float i = x.domain.x; i <= x.domain.y; i += step) {
-    float m = maize(i);
-    float c = cane(i);
-    PVector tl = mercator.getScreenLocation(new PVector(i+step/2, -180));
-    PVector br = mercator.getScreenLocation(new PVector(i-step/2, 180));
-    float w = br.x - tl.x;
-    float h = br.y - tl.y;
+  if (!export) {
+    plot();
+    // Axes
+    fill(grays[2]);
+    stroke(grays[2]);
+    strokeWeight(1);
+    axes();
     
-    boolean drawMaize = showMaize && i >= maizeDomain.x && i <= maizeDomain.y && m >= minEnergy;
-    boolean drawCane = showCane && i >= caneDomain.x && i <= caneDomain.y && c >= minEnergy;
-
-    noStroke();
-
-    if (drawMaize && drawCane) {
-      if (m > c) {
-        fill(maizeColors[int(round(((m - maizeRange.x) / (maizeRange.y - maizeRange.x) * 100))) / (100 / (maizeColors.length - 1))]);
-      } else {
-        fill(caneColors[int(round(((c - caneRange.x) / (caneRange.y - caneRange.x) * 100))) / (100 / (caneColors.length - 1))]);
-      }
-    } else if (drawMaize) {
-      fill(maizeColors[int(round(((m - maizeRange.x) / (maizeRange.y - maizeRange.x) * 100))) / (100 / (maizeColors.length - 1))]);
-    } else if (drawCane) {
-      fill(caneColors[int(round(((c - caneRange.x) / (caneRange.y - caneRange.x) * 100))) / (100 / (caneColors.length - 1))]);
+    pushMatrix();
+    translate(legendPos.x, legendPos.y);
+    legend();
+    popMatrix();
+      
+    if (debug) {
+      debug();
+    }
+  } else {
+    size(1920, 1080);
+    String filename = "";
+    
+    if (showCane) {
+      filename += "cane ";
     }
     
-    if (drawMaize || drawCane) {
-      rect(tl.x, tl.y, br.x - tl.x, br.y - tl.y);
+    if (showMaize) {
+      filename += "maize ";
     }
-  }
-}
-
-void plot() {
-  // Draw cane data
-  noStroke();
-  
-  if (showCane) {
-    fill(caneColors[1]);
     
-    for (int i = 0; i < caneData.size(); i++) {
-      PVector p = caneData.get(i);
-      ellipse(p.x, p.y, 5, 5);
-    }
+    filename += " " + minEnergy + ".png";
+    saveFrame(filename);
+    
+    export = false; 
   }
-
-  if (showMaize) {
-    fill(maizeColors[1]);
-    for (int i = 0; i < maizeData.size(); i++) {
-      PVector p = maizeData.get(i);
-      ellipse(p.x, p.y, 5, 5);
-    }
-  }
-  
-  // Draw the regression lines
-  noFill();
-  
-  if (showCane) {
-    stroke(caneColors[4]);
-    strokeWeight(2);
-    beginShape();
-    for (float i = caneDomain.x; i <= caneDomain.y; i += step) {
-      vertex(x.value(i), y.value(cane(i)));
-    }
-    endShape();
-  }
-  
-  if (showMaize) {
-    stroke(maizeColors[4]);
-    beginShape();
-    for (float i = maizeDomain.x; i < maizeDomain.y; i += step) {
-      vertex(x.value(i), y.value(maize(i)));
-    }
-    endShape();
-  }
-  
-  // Draw the threshold
-  stroke(thresholdColor);
-  strokeWeight(1);
-  line(x.range.x + 5, y.value(minEnergy), x.range.y, y.value(minEnergy));
-  fill(thresholdColor);
-  textAlign(RIGHT);
-  text(String.format("%.2f", minEnergy), x.range.y, y.value(minEnergy) - 2.8);
 }
 
 float maize(float x) {
@@ -194,38 +129,6 @@ float maize(float x) {
 
 float cane(float x) {
   return 0.86884 + (-0.0083336)*x + 0.00091813*pow(x,2) + 1.418E-5 * pow(x,3);
-}
-
-void axes() {
-  textFont(tickLabelFont);
-
-  textAlign(CENTER);
-  for (float i = x.domain.x, j = 0; i <= x.domain.y; i += 10, j++) {
-    line(x.value(i), y.range.x, x.value(i), y.range.x + 5);
-    
-    if (j % 2 == 0) {
-      text(str(int(i)), x.value(i), y.range.x + 20);
-    }
-  }
-  
-  textAlign(RIGHT);
-  for (float i = y.domain.x, j = 0; i <= y.domain.y; i += 0.5, j++) {
-    line(x.range.x, y.value(i), x.range.x - 5, y.value(i));
-    
-    if (j % 2 == 0) {
-      text(str(i), x.range.x - 10, y.value(i) + 3);
-    }
-  }
-  
-  textAlign(CENTER);
-  textFont(tickLabelFont);
-  text("Latitude", x.range.x + (x.range.y - x.range.x)/2, y.range.x + 41);
-
-  pushMatrix();
-  translate(x.range.x - 47, y.range.x + (y.range.y - y.range.x) / 2);
-  rotate(-HALF_PI);
-  text("GJ Harvested Energy per GJ Ecosystem Energy", 0, 0);
-  popMatrix();
 }
 
 void legend() {
@@ -264,7 +167,7 @@ void updateRanges() {
   caneRange = null;
   maizeRange = null;
 
-  for (float i = x.domain.x; i <= x.domain.y; i += step) {
+  for (float i = lat.domain.x; i <= lat.domain.y; i += step) {
     if (i >= maizeDomain.x && i <= maizeDomain.y) {
       float m = maize(i);
       
@@ -297,39 +200,6 @@ void updateRanges() {
   }
 }
 
-void loadData(String filename, ArrayList<PVector> data, PVector domain) {
-  boolean domainUnset = true;
-  BufferedReader reader = createReader(filename);
-  String l;
-  
-  do {
-    try {
-      l = reader.readLine();
-      
-      if (l != null) {
-        String[] toks = l.split(",");
-        float lat = float(toks[0]);
-        float ratio = float(toks[1]);
-        
-        if (domainUnset) {
-          domain.x = lat;
-          domain.y = lat;
-          domainUnset = false;
-        } else {
-          domain.x = min(domain.x, lat);
-          domain.y = max(domain.y, lat);
-        }
-      
-        data.add(new PVector(x.value(lat), y.value(ratio)));
-      }
-      
-    } catch (IOException e) {
-      e.printStackTrace();
-      l = null;
-    }
-  } while (l != null);
-}
-
 void debug() {
   noFill();
   stroke(grays[3]);
@@ -342,7 +212,7 @@ void keyPressed() {
   switch (key) {
     case ENTER:
     case RETURN:
-      saveFrame("map.tiff");
+      export = true;
       break;
       
      case TAB:
@@ -352,9 +222,9 @@ void keyPressed() {
 }
 
 void mousePressed() {
-  float v = y.value(minEnergy);
+  float v = energy.value(minEnergy);
   
-  if (mouseX >= x.range.x && mouseX <= x.range.y &&
+  if (mouseX >= lat.range.x && mouseX <= lat.range.y &&
       mouseY >= v - 5 && mouseY <= v + 5) {
     dragging = true;
     dragOffset = v - mouseY;
@@ -363,9 +233,9 @@ void mousePressed() {
 
 void mouseDragged() {
   if (dragging) {
-    minEnergy = round(y.rev(mouseY + dragOffset) * 100) / 100f;
-    minEnergy = max(y.domain.x, minEnergy);
-    minEnergy = min(y.domain.y, minEnergy);
+    minEnergy = round(energy.rev(mouseY + dragOffset) * 100) / 100f;
+    minEnergy = max(energy.domain.x, minEnergy);
+    minEnergy = min(energy.domain.y, minEnergy);
 
     updateRanges();
   }
