@@ -34,10 +34,8 @@ color[] grays = {
 boolean dragging = false;
 float dragOffset = 0;
 
-boolean export = false;
 boolean showCane = true;
 boolean showMaize = true;
-boolean debug = false;
 
 PVector legendPos;
 
@@ -87,40 +85,18 @@ void draw() {
   
   translate(MARGIN, 0);
   worldMap();
-
-  if (!export) {
-    plot();
-    // Axes
-    fill(grays[2]);
-    stroke(grays[2]);
-    strokeWeight(1);
-    axes();
-    
-    pushMatrix();
-    translate(legendPos.x, legendPos.y);
-    legend();
-    popMatrix();
-      
-    if (debug) {
-      debug();
-    }
-  } else {
-    size(1920, 1080);
-    String filename = "";
-    
-    if (showCane) {
-      filename += "cane ";
-    }
-    
-    if (showMaize) {
-      filename += "maize ";
-    }
-    
-    filename += " " + minEnergy + ".png";
-    saveFrame(filename);
-    
-    export = false; 
-  }
+  
+  plot();
+  // Axes
+  fill(grays[2]);
+  stroke(grays[2]);
+  strokeWeight(1);
+  axes();
+  
+  pushMatrix();
+  translate(legendPos.x, legendPos.y);
+  legend();
+  popMatrix();
 }
 
 float maize(float x) {
@@ -197,27 +173,6 @@ void updateRanges() {
   
   if (maizeRange.x < minEnergy) {
     maizeRange.x = minEnergy;
-  }
-}
-
-void debug() {
-  noFill();
-  stroke(grays[3]);
-  strokeWeight(1);
-  line(width/2, 0, width/2, height);
-  line(0, height/2, width, height/2);
-}
-
-void keyPressed() {
-  switch (key) {
-    case ENTER:
-    case RETURN:
-      export = true;
-      break;
-      
-     case TAB:
-       debug = !debug;
-       break;
   }
 }
 
